@@ -68,7 +68,7 @@ Azure AI Foundry ポータルを使用して Azure AI ハブとプロジェク�
    azd env set AZURE_RESOURCE_GROUP new_rg_name
    azd env set AZURE_LOCATION new_location
    azd up</code></pre>
-        <code>new_env_name</code>、<code>new_rg_name</code>、および <code>new_location</code> を新しい値に置き換えます。 新しい場所は、演習の開始時に一覧表示されるリージョン (<code>eastus2</code>、<code>northcentralus</code>など) のいずれかである必要があります。
+        <code>new_env_name</code>、<code>new_rg_name</code>、および<code>new_location</code>を新しい値に置き換えます。 新しい場所は、演習の開始時に一覧表示されるリージョン (<code>eastus2</code>、<code>northcentralus</code>など) のいずれかである必要があります。
         </ul>
     </details>
 
