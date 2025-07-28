@@ -1,15 +1,18 @@
 ---
 lab:
   title: RAG システムを調整する
+  description: アプリに検索拡張生成 (RAG) システムを実装して、生成された応答の精度と関連性を高める方法について説明します。
 ---
 
 ## RAG システムを調整する
 
 検索拡張生成 (RAG) システムは、大規模言語モデルの能力と効率的な取得メカニズムを組み合わせて、生成された応答の正確性と関連性を高めます。 オーケストレーション用の LangChain と AI 機能用の Azure AI Foundry を利用することで、データセットから関連情報を取得し、一貫性のある応答を生成する信頼性の高いパイプラインを作成できます。 この演習では、環境の設定、データの前処理、埋め込みの作成、インデックスの作成の手順を実行して、最終的に RAG システムを効果的に実装できるようにします。
 
+この演習には約 **30** 分かかります。
+
 ## シナリオ
 
-ホテルに関する推奨事項を提供するアプリをビルドしたいとします。 このアプリには、ホテルを推奨するだけでなく、ユーザーがそのホテルに関してしそうな質問に答えることができるエージェントを求めています。
+ロンドンのホテルに関する推奨事項を提供するアプリを構築するとします。 このアプリには、ホテルを推奨するだけでなく、ユーザーがそのホテルに関してしそうな質問に答えることができるエージェントを求めています。
 
 生成型回答を提供するために GPT-4 モデルを選択しました。 ここでは、他のユーザー レビューに基づいてモデルにグラウンディング データを提供し、チャットの動作をパーソナル化された推奨事項に導く RAG システムを作成したいと考えています。
 
@@ -25,27 +28,31 @@ Azure AI Foundry ポータルを使用して Azure AI ハブとプロジェク�
 
     > **注**: *Bash* 環境を使用するクラウド シェルを以前に作成した場合は、それを ***PowerShell*** に切り替えます。
 
+1. Cloud Shell ツール バーの **[設定]** メニューで、**[クラシック バージョンに移動]** を選択します。
+
+    **<font color="red">続行する前に、クラシック バージョンの Cloud Shell に切り替えたことを確認します。</font>**
+
 1. PowerShell ペインで、次のコマンドを入力して、この演習のリポジトリを複製します。
 
-     ```powershell
-    rm -r mslearn-genaiops -f
-    git clone https://github.com/MicrosoftLearning/mslearn-genaiops
-     ```
+    ```powershell
+   rm -r mslearn-genaiops -f
+   git clone https://github.com/MicrosoftLearning/mslearn-genaiops
+    ```
 
 1. リポジトリが複製されたら、次のコマンドを入力してスターター テンプレートを初期化します。 
    
-     ```powershell
-    cd ./mslearn-genaiops/Starter
-    azd init
-     ```
+    ```powershell
+   cd ./mslearn-genaiops/Starter
+   azd init
+    ```
 
 1. プロンプトが表示されたら、新しい環境に名前を付けます。これは、プロビジョニングされたすべてのリソースに一意の名前を付けるために使用されます。
         
 1. 次に、次のコマンドを入力してスターター テンプレートを実行します。 依存リソース、AI プロジェクト、AI サービス、オンライン エンドポイントを使用して AI ハブをプロビジョニングします。 また、モデル GPT-4 Turbo、GPT-4o、GPT-4o mini もデプロイします。
 
-     ```powershell
-    azd up  
-     ```
+    ```powershell
+   azd up  
+    ```
 
 1. メッセージが表示されたら、使用するサブスクリプションを選択してから、リソース プロビジョニング用に次のいずれかの場所を選択します。
    - 米国東部
@@ -76,19 +83,65 @@ Azure AI Foundry ポータルを使用して Azure AI ハブとプロジェク�
 
      ```powershell
     Get-AzCognitiveServicesAccount -ResourceGroupName <rg-env_name> -Name <aoai-xxxxxxxxxx> | Select-Object -Property endpoint
+     ```
+
+     ```powershell
     Get-AzCognitiveServicesAccountKey -ResourceGroupName <rg-env_name> -Name <aoai-xxxxxxxxxx> | Select-Object -Property Key1
      ```
 
 1. これらの値は、後で使用するのでコピーします。
 
-## ローカルの開発環境を設定する
+## Cloud Shell で開発環境を設定する
 
-実験と反復をすばやく行うために、Visual Studio (VS) Code で Python コードを含むノートブックを使用します。 VS Code をローカルの考案作業に使用する準備をしましょう。
+実験と反復処理をすばやく行うには、Cloud Shell で一連の Python スクリプトを使用します。
 
-1. VS Code を開き、次の Git リポジトリを**クローン**します: [https://github.com/MicrosoftLearning/mslearn-genaiops.git](https://github.com/MicrosoftLearning/mslearn-genaiops.git)
-1. クローンをローカル ドライブに保存し、クローンによりできたフォルダーを開きます。
-1. VS Code Explorer (左側のペイン) で、**Files/04** フォルダーのノートブック **04-RAG.ipynb** を開きます。
-1. ノートブック内のすべてのセルを実行します。
+1. Cloud Shell のコマンド ライン ペインで、次のコマンドを入力して、この演習で使用するコード ファイルを含むフォルダーに移動します。
+
+     ```powershell
+    cd ~/mslearn-genaiops/Files/04/
+     ```
+
+1. 次のコマンドを入力して仮想環境をアクティブ化し、必要なライブラリをインストールします。
+
+    ```powershell
+   python -m venv labenv
+   ./labenv/bin/Activate.ps1
+   pip install python-dotenv langchain-text-splitters langchain-community langchain-openai
+    ```
+
+1. 次のコマンドを入力して、提供されている構成ファイルを開きます。
+
+    ```powershell
+   code .env
+    ```
+
+    このファイルをコード エディターで開きます。
+
+1. コード ファイルで、**your_azure_openai_service_endpoint** と **your_azure_openai_service_api_key** プレースホルダーを、先ほどコピーしたエンドポイントとキーの値に置き換えます。
+1. プレースホルダーを置き換えたら、コード エディター内で、**Ctrl + S** コマンドを使用するか、**右クリックして保存**で変更を保存してから、**Ctrl + Q** コマンドを使用するか、**右クリックして終了**で、Cloud Shell コマンド ラインを開いたままコード エディターを閉じます。**
+
+## RAG を実装する
+
+次に、データの取り込みと前処理、埋め込みの作成、ベクトル ストアとインデックスの構築を行うスクリプトを実行し、最終的に RAG システムを効果的に実装できるようにします。
+
+1. 次のコマンドを実行して、指定された**スクリプトを表示**します。
+
+    ```powershell
+   code RAG.py
+    ```
+
+1. スクリプトを確認し、ホテルのレビューが典拠データとして含まれる.csv ファイルが使用されていることに注目します。 コマンド `download app_hotel_reviews.csv` を実行してファイルを開くと、このファイルの内容を確認できます。
+1. コマンド ラインで次のコマンドを入力して、**スクリプトを実行**します。
+
+    ```
+   python RAG.py
+    ```
+
+1. アプリケーションが実行されたら、`Where can I stay in London?` などの質問を開始し、より具体的な問い合わせをフォローアップできます。
+
+## まとめ
+
+この演習では、主要コンポーネントを含む一般的な RAG システムを構築しました。 独自のドキュメントを使用してモデルの応答をお知らせして、LLM が応答を作成するときに使用される典拠データを提供します。 エンタープライズ ソリューションの場合は、生成 AI をエンタープライズ コンテンツに制限できることを意味します。
 
 ## クリーンアップ
 
