@@ -91,7 +91,7 @@ Azure Cloud Shell から Azure AI Foundry プロジェクトに接続し、生�
     ```
    python -m venv labenv
    ./labenv/bin/Activate.ps1
-   pip install python-dotenv openai azure-identity azure-ai-projects azure-ai-inference azure-monitor-opentelemetry
+   pip install python-dotenv openai azure-identity azure-ai-projects opentelemetry-instrumentation-openai-v2 azure-monitor-opentelemetry
     ```
 
 1. 次のコマンドを入力して、提供されている構成ファイルを開きます。
