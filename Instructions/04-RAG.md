@@ -124,16 +124,59 @@ Azure AI Foundry ポータルを使用して Azure AI ハブとプロジェク�
 
 次に、データの取り込みと前処理、埋め込みの作成、ベクトル ストアとインデックスの構築を行うスクリプトを実行し、最終的に RAG システムを効果的に実装できるようにします。
 
-1. 次のコマンドを実行して、指定された**スクリプトを表示**します。
+1. 次のコマンドを実行して、提供された**スクリプトを編集**します。
 
     ```powershell
    code RAG.py
     ```
 
-1. スクリプトを確認し、ホテルのレビューが典拠データとして含まれる.csv ファイルが使用されていることに注目します。 コマンド `download app_hotel_reviews.csv` を実行してファイルを開くと、このファイルの内容を確認できます。
+1. スクリプトで、**# Initialize the components that will be used from LangChain's suite of integrations (# LangChain の統合スイートから使用されるコンポーネントを初期化する)** を探します。 このコメントの下に、次のコードを貼り付けます。
+
+    ```python
+   # Initialize the components that will be used from LangChain's suite of integrations
+   llm = AzureChatOpenAI(azure_deployment=llm_name)
+   embeddings = AzureOpenAIEmbeddings(azure_deployment=embeddings_name)
+   vector_store = InMemoryVectorStore(embeddings)
+    ```
+
+1. スクリプトを確認し、ホテルのレビューが典拠データとして含まれる.csv ファイルが使用されていることに注目します。 コマンド ライン ペインでコマンド `download app_hotel_reviews.csv` を実行してファイルを開くと、このファイルの内容を確認できます。
+1. 次に、**# Split the documents into chunks for embedding and vector storage (# 埋め込みとベクトル ストレージのチャンクにドキュメントを分割する)** を探します。 このコメントの下に、次のコードを貼り付けます。
+
+    ```python
+   # Split the documents into chunks for embedding and vector storage
+   text_splitter = RecursiveCharacterTextSplitter(
+       chunk_size=200,
+       chunk_overlap=20,
+       add_start_index=True,
+   )
+   all_splits = text_splitter.split_documents(docs)
+    
+   print(f"Split documents into {len(all_splits)} sub-documents.")
+    ```
+
+    上記のコードにより、一連の大きなドキュメントが小さなチャンクに分割されます。 多くの埋め込みモデル (セマンティック検索やベクトル データベースに使用されるモデルなど) にはトークンの制限があり、短いテキストの方がパフォーマンスが向上するため、これは重要です。
+
+1. 次に、**# Embed the contents of each text chunk and insert these embeddings into a vector store (# 各テキスト チャンクの内容を埋め込み、その埋め込みをベクトル ストアに挿入する)** を探します。 このコメントの下に、次のコードを貼り付けます。
+
+    ```python
+   # Embed the contents of each text chunk and insert these embeddings into a vector store
+   document_ids = vector_store.add_documents(documents=all_splits)
+    ```
+
+1. 次に、**# Retrieve relevant documents from the vector store based on user input (# ユーザーによる入力に基づいてベクトル ストアから関連するドキュメントを取得する)** を探します。 このコメントの下に、次のコードを貼り付けて、インデントが適切かどうかを観察します。
+
+    ```python
+   # Retrieve relevant documents from the vector store based on user input
+   retrieved_docs = vector_store.similarity_search(question, k=10)
+   docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
+    ```
+
+    上記のコードにより、ベクトル ストアで、ユーザーが入力した質問に最も近いドキュメントが検索されます。 質問は、ドキュメントに使用されたのと同じ埋め込みモデルを使用してベクトルに変換されます。 その後、システムはこのベクトルを格納されているすべてのベクトルと比較し、最も近いベクトルを取得します。
+
+1. 変更を保存。
 1. コマンド ラインで次のコマンドを入力して、**スクリプトを実行**します。
 
-    ```
+    ```powershell
    python RAG.py
     ```
 
