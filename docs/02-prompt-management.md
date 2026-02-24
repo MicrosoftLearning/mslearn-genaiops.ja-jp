@@ -2,6 +2,8 @@
 lab:
     title: 'Develop prompt and agent versions'
     description: 'Create and deploy multiple versions of AI agents using prompt engineering and version management in Microsoft Foundry.'
+    level: 200
+    duration: 30 minutes
 ---
 
 # Develop prompt and agent versions
@@ -22,7 +24,7 @@ To complete the tasks in this exercise, you need:
 
 - Visual Studio Code
 - Azure subscription with Microsoft Foundry access
-- Git and GitHub account
+- Git and [GitHub](https://github.com) account
 - Python 3.9 or later
 - Azure CLI and Azure Developer CLI (azd) installed
 
@@ -32,7 +34,7 @@ All steps in this lab will be performed using Visual Studio Code and its integra
 
 You'll start by creating your own repository from the template to practice realistic workflows.
 
-1. In a web browser, navigate to `https://github.com/MicrosoftLearning/mslearn-genaiops`.
+1. In a web browser, navigate to the template repository on [GitHub](https://github.com) at `https://github.com/MicrosoftLearning/mslearn-genaiops`.
 1. Select **Use this template** > **Create a new repository**.
 1. Enter a name for your repository (e.g., `mslearn-genaiops`).
 1. Set the repository to **Public** or **Private** based on your preference.
@@ -51,6 +53,8 @@ After creating your repository, clone it to your local machine.
 ### Deploy Microsoft Foundry resources
 
 Now you'll use the Azure Developer CLI to deploy all required Azure resources.
+
+> **Note**: This lab uses infrastructure-as-code (IaC) deployment with `azd` because it follows GenAIOps best practices and makes the lab accessible as a standalone exercise. This approach ensures consistent, reproducible environments while teaching real-world deployment patterns.
 
 1. In Visual Studio Code, open a terminal by selecting **Terminal** > **New Terminal** from the menu.
 
@@ -111,7 +115,7 @@ With your Azure resources deployed, install the required Python packages to work
 
     ```powershell
     python -m venv .venv
-    .venv\Scripts\Activate.ps1
+    .venv/Scripts/Activate.ps1
     ```
 
 1. Install the required dependencies:
@@ -137,7 +141,7 @@ Start by deploying the first version of the trail guide agent.
 1. In the VS Code terminal, navigate to the trail guide agent directory:
 
     ```powershell
-    cd src\agents\trail_guide_agent
+    cd src/agents/trail_guide_agent
     ```
 
 1. Open the agent creation script (`trail_guide_agent.py`) and locate the line that reads the prompt file:
